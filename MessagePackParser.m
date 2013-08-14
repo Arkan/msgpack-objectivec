@@ -26,7 +26,7 @@
             return [[NSNumber alloc] initWithDouble:obj.via.dec];
             break;
         case MSGPACK_OBJECT_RAW:
-            return [[NSString alloc] initWithBytes:obj.via.raw.ptr length:obj.via.raw.size encoding:NSUTF8StringEncoding];
+            return [[NSData alloc] initWithBytes:obj.via.raw.ptr length:obj.via.raw.size];
             break;
         case MSGPACK_OBJECT_ARRAY:
         {
@@ -49,7 +49,13 @@
             for(msgpack_object_kv* p = obj.via.map.ptr; p < pend; p++){
                 id key = [self createUnpackedObject:p->key];
                 id val = [self createUnpackedObject:p->val];
-                [dict setValue:val forKey:key];
+                if ([key isKindOfClass:[NSData class]]) {
+                  key = [[NSString alloc] initWithData:key encoding:NSUTF8StringEncoding];
+                }
+                if (![val isKindOfClass:[NSNull class]]) {
+                  // Do not set keys for null values
+                  [dict setValue:val forKey:key];
+                }
 #if !__has_feature(objc_arc)
 				[key release];
 				[val release];
